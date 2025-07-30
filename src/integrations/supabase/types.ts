@@ -91,6 +91,144 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          barcode: string | null
+          category: string
+          cost_price: number
+          created_at: string
+          description: string | null
+          id: string
+          low_stock_threshold: number | null
+          name: string
+          quantity: number
+          selling_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          category: string
+          cost_price: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          low_stock_threshold?: number | null
+          name: string
+          quantity?: number
+          selling_price: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string
+          cost_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          low_stock_threshold?: number | null
+          name?: string
+          quantity?: number
+          selling_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string | null
+          shop_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          shop_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string | null
+          shop_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          discount: number | null
+          id: string
+          items: Json
+          subtotal: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          discount?: number | null
+          id?: string
+          items: Json
+          subtotal: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          discount?: number | null
+          id?: string
+          items?: Json
+          subtotal?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          created_at: string
+          currency: string | null
+          id: string
+          shop_name: string | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          shop_name?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          id?: string
+          shop_name?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_routes: {
         Row: {
           camera_count: number | null
