@@ -1,0 +1,130 @@
+import { useState, useRef, useEffect } from "react";
+import QrScanner from "qr-scanner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Camera, X } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+interface QRScannerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onScan: (result: string) => void;
+  title?: string;
+}
+
+export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: QRScannerProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const qrScannerRef = useRef<QrScanner | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && videoRef.current) {
+      startScanner();
+    } else {
+      stopScanner();
+    }
+
+    return () => {
+      stopScanner();
+    };
+  }, [isOpen]);
+
+  const startScanner = async () => {
+    if (!videoRef.current) return;
+
+    try {
+      setIsScanning(true);
+      
+      qrScannerRef.current = new QrScanner(
+        videoRef.current,
+        (result) => {
+          onScan(result.data);
+          stopScanner();
+          onClose();
+          toast({
+            title: "QR Code Scanned!",
+            description: `Found: ${result.data}`,
+          });
+        },
+        {
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
+      );
+
+      await qrScannerRef.current.start();
+    } catch (error) {
+      console.error("Error starting QR scanner:", error);
+      toast({
+        title: "Camera Error",
+        description: "Unable to access camera. Please check permissions.",
+        variant: "destructive",
+      });
+      setIsScanning(false);
+      onClose();
+    }
+  };
+
+  const stopScanner = () => {
+    if (qrScannerRef.current) {
+      qrScannerRef.current.stop();
+      qrScannerRef.current.destroy();
+      qrScannerRef.current = null;
+    }
+    setIsScanning(false);
+  };
+
+  const handleClose = () => {
+    stopScanner();
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5" />
+            {title}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              style={{ display: isOpen ? 'block' : 'none' }}
+            />
+            
+            {!isScanning && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <Camera className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Initializing camera...
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              Point your camera at a QR code to scan
+            </p>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleClose}
+            className="w-full"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Cancel
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

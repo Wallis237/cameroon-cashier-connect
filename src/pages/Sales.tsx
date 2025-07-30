@@ -12,10 +12,12 @@ import {
   ShoppingCart, 
   Receipt,
   X,
-  Package
+  Package,
+  Scan
 } from "lucide-react";
 import { formatPrice, parseCurrency } from "@/lib/currency";
 import { toast } from "@/hooks/use-toast";
+import { QRScanner } from "@/components/QRScanner";
 
 interface Product {
   id: string;
@@ -34,6 +36,7 @@ export default function Sales() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [customerName, setCustomerName] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
 
   // Mock products data
   const products: Product[] = [
@@ -114,6 +117,25 @@ export default function Sales() {
   const discountAmount = (subtotal * discount) / 100;
   const total = subtotal - discountAmount;
 
+  const handleQRScan = (qrData: string) => {
+    // Try to find product by QR code (assuming QR contains product ID)
+    const product = products.find(p => p.id === qrData || p.name.toLowerCase().includes(qrData.toLowerCase()));
+    
+    if (product) {
+      addToCart(product);
+      toast({
+        title: "Product Added!",
+        description: `${product.name} added to cart`,
+      });
+    } else {
+      toast({
+        title: "Product Not Found",
+        description: `No product found for QR code: ${qrData}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSale = () => {
     if (cart.length === 0) {
       toast({
@@ -158,14 +180,25 @@ export default function Sales() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products by name or category..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products by name or category..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Button
+                  variant="outline"
+                  onClick={() => setShowScanner(true)}
+                  className="w-full"
+                >
+                  <Scan className="h-4 w-4 mr-2" />
+                  Scan QR Code
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -340,6 +373,14 @@ export default function Sales() {
           </Card>
         </div>
       </div>
+      
+      {/* QR Scanner Modal */}
+      <QRScanner
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleQRScan}
+        title="Scan Product QR Code"
+      />
     </div>
   );
 }
