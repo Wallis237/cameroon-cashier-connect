@@ -15,20 +15,19 @@ import {
   Package,
   Scan
 } from "lucide-react";
-import { formatPrice, parseCurrency } from "@/lib/currency";
+import { formatPrice } from "@/lib/currency";
 import { toast } from "@/hooks/use-toast";
 import { QRScanner } from "@/components/QRScanner";
+import { useProducts } from "@/hooks/useProducts";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-interface Product {
+interface CartItem {
   id: string;
   name: string;
   price: number;
-  stock: number;
-  category: string;
-}
-
-interface CartItem extends Product {
   quantity: number;
+  category: string;
 }
 
 export default function Sales() {
@@ -37,24 +36,17 @@ export default function Sales() {
   const [discount, setDiscount] = useState(0);
   const [customerName, setCustomerName] = useState("");
   const [showScanner, setShowScanner] = useState(false);
-
-  // Mock products data
-  const products: Product[] = [
-    { id: "1", name: "Women's Handbag", price: 45000, stock: 12, category: "Accessories" },
-    { id: "2", name: "Men's Sneakers", price: 65000, stock: 8, category: "Footwear" },
-    { id: "3", name: "Summer Dress", price: 35000, stock: 15, category: "Clothing" },
-    { id: "4", name: "Watch", price: 125000, stock: 5, category: "Accessories" },
-    { id: "5", name: "T-Shirt", price: 18000, stock: 25, category: "Clothing" },
-    { id: "6", name: "Jeans", price: 42000, stock: 10, category: "Clothing" },
-  ];
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { products, updateStock } = useProducts();
+  const { user } = useAuth();
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addToCart = (product: Product) => {
-    if (product.stock === 0) {
+  const addToCart = (product: any) => {
+    if (product.quantity === 0) {
       toast({
         title: "Out of Stock",
         description: `${product.name} is currently out of stock`,
@@ -66,10 +58,10 @@ export default function Sales() {
     setCart(prev => {
       const existingItem = prev.find(item => item.id === product.id);
       if (existingItem) {
-        if (existingItem.quantity >= product.stock) {
+        if (existingItem.quantity >= product.quantity) {
           toast({
             title: "Stock Limit Reached",
-            description: `Cannot add more ${product.name}. Only ${product.stock} in stock.`,
+            description: `Cannot add more ${product.name}. Only ${product.quantity} in stock.`,
             variant: "destructive",
           });
           return prev;
@@ -80,7 +72,13 @@ export default function Sales() {
             : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { 
+        id: product.id,
+        name: product.name,
+        price: product.selling_price,
+        quantity: 1,
+        category: product.category
+      }];
     });
   };
 
@@ -136,7 +134,7 @@ export default function Sales() {
     }
   };
 
-  const handleSale = () => {
+  const handleSale = async () => {
     if (cart.length === 0) {
       toast({
         title: "Empty Cart",
@@ -146,16 +144,47 @@ export default function Sales() {
       return;
     }
 
-    // Process sale
-    toast({
-      title: "Sale Completed!",
-      description: `Total: ${formatPrice(total)} - Receipt printed successfully`,
-    });
+    setIsProcessing(true);
+    
+    try {
+      // Record sale in database
+      const { error: salesError } = await supabase
+        .from('sales')
+        .insert([{
+          user_id: user?.id,
+          customer_name: customerName || null,
+          items: cart,
+          subtotal: subtotal,
+          discount: discountAmount,
+          total: total,
+        }]);
 
-    // Clear cart and reset form
-    setCart([]);
-    setDiscount(0);
-    setCustomerName("");
+      if (salesError) throw salesError;
+
+      // Update product quantities
+      for (const item of cart) {
+        await updateStock(item.id, -item.quantity);
+      }
+
+      toast({
+        title: "Sale Completed!",
+        description: `Total: ${formatPrice(total)} - Receipt saved successfully`,
+      });
+
+      // Clear cart and reset form
+      setCart([]);
+      setDiscount(0);
+      setCustomerName("");
+    } catch (error) {
+      console.error('Error processing sale:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process sale. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

@@ -7,9 +7,12 @@ import {
   User,
   AlertTriangle,
   Plus,
-  Eye
+  Eye,
+  LogOut
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 import {
   Sidebar,
@@ -50,6 +53,15 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
+  const { signOut, user } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out successfully",
+      description: "You have been logged out of your account",
+    });
+  };
 
   const isActive = (path: string) => currentPath === path;
   
@@ -158,10 +170,30 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className={collapsed ? "p-2" : "p-4"}>
-        {!collapsed && (
-          <Button variant="outline" size="sm" className="w-full">
-            <User className="h-4 w-4 mr-2" />
-            Admin User
+        {!collapsed ? (
+          <div className="space-y-2">
+            <Button variant="outline" size="sm" className="w-full">
+              <User className="h-4 w-4 mr-2" />
+              {user?.email?.split('@')[0] || 'Admin'}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full text-muted-foreground hover:text-destructive"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        ) : (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full p-2"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" />
           </Button>
         )}
       </SidebarFooter>

@@ -3,6 +3,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Bell, Search } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import madoLogo from "@/assets/mado-boutique-logo.png";
 
 interface LayoutProps {
@@ -11,7 +12,8 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   return (
-    <SidebarProvider>
+    <ProtectedRoute>
+      <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
@@ -47,5 +49,6 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </div>
     </SidebarProvider>
+    </ProtectedRoute>
   );
 }

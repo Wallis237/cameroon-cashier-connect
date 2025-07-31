@@ -35,6 +35,11 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
     try {
       setIsScanning(true);
       
+      // Check if camera permission is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera not supported in this browser");
+      }
+
       qrScannerRef.current = new QrScanner(
         videoRef.current,
         (result) => {
@@ -43,21 +48,34 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
           onClose();
           toast({
             title: "QR Code Scanned!",
-            description: `Found: ${result.data}`,
+            description: `Scanned: ${result.data}`,
           });
         },
         {
           highlightScanRegion: true,
           highlightCodeOutline: true,
+          preferredCamera: 'environment', // Use back camera on mobile
+          maxScansPerSecond: 5,
         }
       );
 
       await qrScannerRef.current.start();
-    } catch (error) {
+      setIsScanning(true);
+    } catch (error: any) {
       console.error("Error starting QR scanner:", error);
+      let errorMessage = "Unable to access camera. Please check permissions.";
+      
+      if (error?.name === 'NotAllowedError') {
+        errorMessage = "Camera access denied. Please allow camera permissions and try again.";
+      } else if (error?.name === 'NotFoundError') {
+        errorMessage = "No camera found on this device.";
+      } else if (error?.name === 'NotSupportedError') {
+        errorMessage = "Camera not supported in this browser.";
+      }
+      
       toast({
         title: "Camera Error",
-        description: "Unable to access camera. Please check permissions.",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsScanning(false);

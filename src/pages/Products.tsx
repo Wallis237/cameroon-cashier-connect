@@ -4,232 +4,173 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  Plus, 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { 
   Search, 
+  Plus, 
+  MoreHorizontal, 
   Edit, 
   Trash2, 
   Package,
-  MoreHorizontal
+  Filter,
+  Scan,
+  Loader2
 } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 import { toast } from "@/hooks/use-toast";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  costPrice: number;
-  sellPrice: number;
-  stock: number;
-  minStock: number;
-  createdAt: string;
-}
+import { useProducts, Product } from "@/hooks/useProducts";
+import { QRScanner } from "@/components/QRScanner";
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  
-  // Mock products data
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "1",
-      name: "Women's Handbag",
-      category: "Accessories",
-      costPrice: 25000,
-      sellPrice: 45000,
-      stock: 12,
-      minStock: 5,
-      createdAt: "2024-01-15"
-    },
-    {
-      id: "2",
-      name: "Men's Sneakers",
-      category: "Footwear",
-      costPrice: 35000,
-      sellPrice: 65000,
-      stock: 8,
-      minStock: 3,
-      createdAt: "2024-01-14"
-    },
-    {
-      id: "3",
-      name: "Summer Dress",
-      category: "Clothing",
-      costPrice: 18000,
-      sellPrice: 35000,
-      stock: 15,
-      minStock: 8,
-      createdAt: "2024-01-13"
-    },
-    {
-      id: "4",
-      name: "Watch",
-      category: "Accessories",
-      costPrice: 75000,
-      sellPrice: 125000,
-      stock: 5,
-      minStock: 2,
-      createdAt: "2024-01-12"
-    }
-  ]);
+  const [showScanner, setShowScanner] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { products, loading, addProduct, updateProduct, deleteProduct } = useProducts();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    category: "",
+    cost_price: "",
+    selling_price: "",
+    quantity: "",
+    low_stock_threshold: "5",
+    barcode: "",
+    description: ""
+  });
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
-
+  
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    
-    const newProduct: Product = {
-      id: Date.now().toString(),
-      name: formData.get("name") as string,
-      category: formData.get("category") as string,
-      costPrice: Number(formData.get("costPrice")),
-      sellPrice: Number(formData.get("sellPrice")),
-      stock: Number(formData.get("stock")),
-      minStock: Number(formData.get("minStock")),
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-
-    setProducts(prev => [...prev, newProduct]);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Product Added",
-      description: `${newProduct.name} has been added to inventory`,
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      category: "",
+      cost_price: "",
+      selling_price: "",
+      quantity: "",
+      low_stock_threshold: "5",
+      barcode: "",
+      description: ""
     });
-  };
-
-  const handleEditProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProduct) return;
-
-    const formData = new FormData(e.target as HTMLFormElement);
-    
-    const updatedProduct: Product = {
-      ...editingProduct,
-      name: formData.get("name") as string,
-      category: formData.get("category") as string,
-      costPrice: Number(formData.get("costPrice")),
-      sellPrice: Number(formData.get("sellPrice")),
-      stock: Number(formData.get("stock")),
-      minStock: Number(formData.get("minStock"))
-    };
-
-    setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
     setEditingProduct(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const productData = {
+        name: formData.name,
+        category: formData.category,
+        cost_price: parseFloat(formData.cost_price),
+        selling_price: parseFloat(formData.selling_price),
+        quantity: parseInt(formData.quantity),
+        low_stock_threshold: parseInt(formData.low_stock_threshold),
+        barcode: formData.barcode || undefined,
+        description: formData.description || undefined,
+      };
+
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+      } else {
+        await addProduct(productData);
+      }
+
+      resetForm();
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving product:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setFormData({
+      name: product.name,
+      category: product.category,
+      cost_price: product.cost_price.toString(),
+      selling_price: product.selling_price.toString(),
+      quantity: product.quantity.toString(),
+      low_stock_threshold: product.low_stock_threshold.toString(),
+      barcode: product.barcode || "",
+      description: product.description || ""
+    });
+    setEditingProduct(product);
+    setIsAddDialogOpen(true);
+  };
+
+  const handleDelete = async (product: Product) => {
+    if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      await deleteProduct(product.id);
+    }
+  };
+
+  const handleQRScan = (qrData: string) => {
+    // Set the barcode field with scanned data
+    setFormData(prev => ({ ...prev, barcode: qrData }));
     toast({
-      title: "Product Updated",
-      description: `${updatedProduct.name} has been updated`,
+      title: "Barcode Scanned",
+      description: `Barcode: ${qrData}`,
     });
   };
 
-  const handleDeleteProduct = (id: string) => {
-    const product = products.find(p => p.id === id);
-    setProducts(prev => prev.filter(p => p.id !== id));
-    toast({
-      title: "Product Deleted",
-      description: `${product?.name} has been removed from inventory`,
-    });
+  const getStockStatus = (product: Product) => {
+    if (product.quantity === 0) {
+      return { label: "Out of Stock", variant: "destructive" as const };
+    } else if (product.quantity <= product.low_stock_threshold) {
+      return { label: "Low Stock", variant: "secondary" as const };
+    }
+    return { label: "In Stock", variant: "default" as const };
   };
 
-  const ProductForm = ({ product, onSubmit }: { product?: Product; onSubmit: (e: React.FormEvent) => void }) => (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Product Name</Label>
-        <Input
-          id="name"
-          name="name"
-          defaultValue={product?.name}
-          placeholder="Enter product name"
-          required
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="category">Category</Label>
-        <Select name="category" defaultValue={product?.category}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Clothing">Clothing</SelectItem>
-            <SelectItem value="Footwear">Footwear</SelectItem>
-            <SelectItem value="Accessories">Accessories</SelectItem>
-            <SelectItem value="Electronics">Electronics</SelectItem>
-            <SelectItem value="Beauty">Beauty</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+  const calculateProfit = (cost: number, sell: number) => {
+    return sell - cost;
+  };
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="costPrice">Cost Price (₣)</Label>
-          <Input
-            id="costPrice"
-            name="costPrice"
-            type="number"
-            defaultValue={product?.costPrice}
-            placeholder="0"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="sellPrice">Sell Price (₣)</Label>
-          <Input
-            id="sellPrice"
-            name="sellPrice"
-            type="number"
-            defaultValue={product?.sellPrice}
-            placeholder="0"
-            required
-          />
-        </div>
-      </div>
+  const calculateProfitMargin = (cost: number, sell: number) => {
+    return ((sell - cost) / sell * 100).toFixed(1);
+  };
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="stock">Current Stock</Label>
-          <Input
-            id="stock"
-            name="stock"
-            type="number"
-            defaultValue={product?.stock}
-            placeholder="0"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="minStock">Minimum Stock</Label>
-          <Input
-            id="minStock"
-            name="minStock"
-            type="number"
-            defaultValue={product?.minStock}
-            placeholder="0"
-            required
-          />
-        </div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-
-      <DialogFooter>
-        <Button type="submit">
-          {product ? "Update Product" : "Add Product"}
-        </Button>
-      </DialogFooter>
-    </form>
-  );
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -238,30 +179,21 @@ export default function Products() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Products</h1>
           <p className="text-muted-foreground">
-            Manage your inventory and product catalog
+            Manage your product catalog and inventory
           </p>
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={resetForm}>
               <Plus className="h-4 w-4 mr-2" />
               Add Product
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
-              <DialogDescription>
-                Enter the details for the new product
-              </DialogDescription>
-            </DialogHeader>
-            <ProductForm onSubmit={handleAddProduct} />
-          </DialogContent>
         </Dialog>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <Card className="shadow-soft">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -274,12 +206,14 @@ export default function Products() {
                 className="pl-10"
               />
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All Categories" />
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(category => (
+                {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category === "all" ? "All Categories" : category}
                   </SelectItem>
@@ -293,32 +227,32 @@ export default function Products() {
       {/* Products Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredProducts.map((product) => {
-          const profitMargin = ((product.sellPrice - product.costPrice) / product.sellPrice * 100).toFixed(1);
-          const isLowStock = product.stock <= product.minStock;
-          
+          const stockStatus = getStockStatus(product);
+          const profit = calculateProfit(product.cost_price, product.selling_price);
+          const profitMargin = calculateProfitMargin(product.cost_price, product.selling_price);
+
           return (
             <Card key={product.id} className="shadow-soft hover:shadow-medium transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+                  <div className="flex-1">
                     <CardTitle className="text-lg">{product.name}</CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      {product.category}
-                    </Badge>
+                    <CardDescription>{product.category}</CardDescription>
                   </div>
+                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={() => setEditingProduct(product)}>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEdit(product)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => handleDeleteProduct(product.id)}
+                        onClick={() => handleDelete(product)}
                         className="text-destructive"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -327,64 +261,199 @@ export default function Products() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
+                
+                <Badge variant={stockStatus.variant} className="w-fit">
+                  {stockStatus.label}
+                </Badge>
               </CardHeader>
               
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Cost Price</p>
-                    <p className="font-medium">{formatPrice(product.costPrice)}</p>
+                    <p className="font-medium">{formatPrice(product.cost_price)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Sell Price</p>
-                    <p className="font-bold text-primary">{formatPrice(product.sellPrice)}</p>
+                    <p className="text-muted-foreground">Selling Price</p>
+                    <p className="font-medium text-primary">{formatPrice(product.selling_price)}</p>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Stock</p>
-                    <div className="flex items-center gap-2">
-                      <Package className="h-3 w-3" />
-                      <span className={isLowStock ? "text-destructive font-medium" : ""}>
-                        {product.stock}
-                      </span>
-                      {isLowStock && (
-                        <Badge variant="destructive" className="text-xs">Low</Badge>
-                      )}
-                    </div>
+                    <p className="font-medium">{product.quantity} units</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Profit Margin</p>
-                    <p className="font-medium text-primary">{profitMargin}%</p>
+                    <p className="text-muted-foreground">Profit</p>
+                    <p className="font-medium text-green-600">
+                      {formatPrice(profit)} ({profitMargin}%)
+                    </p>
                   </div>
                 </div>
-
-                <div className="pt-2 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    Added: {new Date(product.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
+                
+                {product.barcode && (
+                  <div className="text-xs text-muted-foreground">
+                    Barcode: {product.barcode}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Edit Product Dialog */}
-      <Dialog open={!!editingProduct} onOpenChange={() => setEditingProduct(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>
-              Update the product details
-            </DialogDescription>
-          </DialogHeader>
-          {editingProduct && (
-            <ProductForm product={editingProduct} onSubmit={handleEditProduct} />
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Add/Edit Product Dialog */}
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {editingProduct ? "Edit Product" : "Add New Product"}
+          </DialogTitle>
+          <DialogDescription>
+            {editingProduct ? "Update product information" : "Add a new product to your inventory"}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label htmlFor="name">Product Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div className="col-span-2">
+              <Label htmlFor="category">Category *</Label>
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Clothing">Clothing</SelectItem>
+                  <SelectItem value="Accessories">Accessories</SelectItem>
+                  <SelectItem value="Footwear">Footwear</SelectItem>
+                  <SelectItem value="Electronics">Electronics</SelectItem>
+                  <SelectItem value="Home & Garden">Home & Garden</SelectItem>
+                  <SelectItem value="Beauty">Beauty</SelectItem>
+                  <SelectItem value="Sports">Sports</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="cost_price">Cost Price *</Label>
+              <Input
+                id="cost_price"
+                type="number"
+                step="0.01"
+                value={formData.cost_price}
+                onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="selling_price">Selling Price *</Label>
+              <Input
+                id="selling_price"
+                type="number"
+                step="0.01"
+                value={formData.selling_price}
+                onChange={(e) => setFormData(prev => ({ ...prev, selling_price: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                value={formData.quantity}
+                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="low_stock_threshold">Low Stock Alert</Label>
+              <Input
+                id="low_stock_threshold"
+                type="number"
+                value={formData.low_stock_threshold}
+                onChange={(e) => setFormData(prev => ({ ...prev, low_stock_threshold: e.target.value }))}
+              />
+            </div>
+            
+            <div className="col-span-2">
+              <Label htmlFor="barcode">Barcode</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="barcode"
+                  value={formData.barcode}
+                  onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
+                  placeholder="Enter or scan barcode"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowScanner(true)}
+                >
+                  <Scan className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="col-span-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Optional product description"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetForm();
+                setIsAddDialogOpen(false);
+              }}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {editingProduct ? "Updating..." : "Adding..."}
+                </>
+              ) : (
+                editingProduct ? "Update Product" : "Add Product"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+
+      {/* QR Scanner */}
+      <QRScanner
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={handleQRScan}
+        title="Scan Product Barcode"
+      />
     </div>
   );
 }
