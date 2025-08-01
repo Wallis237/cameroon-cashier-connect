@@ -190,6 +190,152 @@ export default function Products() {
               Add Product
             </Button>
           </DialogTrigger>
+          
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingProduct ? "Edit Product" : "Add New Product"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingProduct ? "Update product information" : "Add a new product to your inventory"}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div className="col-span-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Clothing">Clothing</SelectItem>
+                      <SelectItem value="Accessories">Accessories</SelectItem>
+                      <SelectItem value="Footwear">Footwear</SelectItem>
+                      <SelectItem value="Electronics">Electronics</SelectItem>
+                      <SelectItem value="Home & Garden">Home & Garden</SelectItem>
+                      <SelectItem value="Beauty">Beauty</SelectItem>
+                      <SelectItem value="Sports">Sports</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="cost_price">Cost Price *</Label>
+                  <Input
+                    id="cost_price"
+                    type="number"
+                    step="0.01"
+                    value={formData.cost_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="selling_price">Selling Price *</Label>
+                  <Input
+                    id="selling_price"
+                    type="number"
+                    step="0.01"
+                    value={formData.selling_price}
+                    onChange={(e) => setFormData(prev => ({ ...prev, selling_price: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="low_stock_threshold">Low Stock Alert</Label>
+                  <Input
+                    id="low_stock_threshold"
+                    type="number"
+                    value={formData.low_stock_threshold}
+                    onChange={(e) => setFormData(prev => ({ ...prev, low_stock_threshold: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="col-span-2">
+                  <Label htmlFor="barcode">Barcode</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="barcode"
+                      value={formData.barcode}
+                      onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
+                      placeholder="Enter or scan barcode"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowScanner(true)}
+                    >
+                      <Scan className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="col-span-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Optional product description"
+                    rows={3}
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    resetForm();
+                    setIsAddDialogOpen(false);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {editingProduct ? "Updating..." : "Adding..."}
+                    </>
+                  ) : (
+                    editingProduct ? "Update Product" : "Add Product"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
         </Dialog>
       </div>
 
@@ -300,152 +446,6 @@ export default function Products() {
         })}
       </div>
 
-      {/* Add/Edit Product Dialog */}
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {editingProduct ? "Edit Product" : "Add New Product"}
-          </DialogTitle>
-          <DialogDescription>
-            {editingProduct ? "Update product information" : "Add a new product to your inventory"}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <Label htmlFor="name">Product Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div className="col-span-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select 
-                value={formData.category} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Clothing">Clothing</SelectItem>
-                  <SelectItem value="Accessories">Accessories</SelectItem>
-                  <SelectItem value="Footwear">Footwear</SelectItem>
-                  <SelectItem value="Electronics">Electronics</SelectItem>
-                  <SelectItem value="Home & Garden">Home & Garden</SelectItem>
-                  <SelectItem value="Beauty">Beauty</SelectItem>
-                  <SelectItem value="Sports">Sports</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="cost_price">Cost Price *</Label>
-              <Input
-                id="cost_price"
-                type="number"
-                step="0.01"
-                value={formData.cost_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="selling_price">Selling Price *</Label>
-              <Input
-                id="selling_price"
-                type="number"
-                step="0.01"
-                value={formData.selling_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, selling_price: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="low_stock_threshold">Low Stock Alert</Label>
-              <Input
-                id="low_stock_threshold"
-                type="number"
-                value={formData.low_stock_threshold}
-                onChange={(e) => setFormData(prev => ({ ...prev, low_stock_threshold: e.target.value }))}
-              />
-            </div>
-            
-            <div className="col-span-2">
-              <Label htmlFor="barcode">Barcode</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="barcode"
-                  value={formData.barcode}
-                  onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
-                  placeholder="Enter or scan barcode"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowScanner(true)}
-                >
-                  <Scan className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="col-span-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional product description"
-                rows={3}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                resetForm();
-                setIsAddDialogOpen(false);
-              }}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {editingProduct ? "Updating..." : "Adding..."}
-                </>
-              ) : (
-                editingProduct ? "Update Product" : "Add Product"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
 
       {/* QR Scanner */}
       <QRScanner
