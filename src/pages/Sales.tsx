@@ -116,19 +116,47 @@ export default function Sales() {
   const total = subtotal - discountAmount;
 
   const handleQRScan = (qrData: string) => {
-    // Try to find product by QR code (assuming QR contains product ID)
-    const product = products.find(p => p.id === qrData || p.name.toLowerCase().includes(qrData.toLowerCase()));
+    console.log('QR data scanned:', qrData);
+    
+    // Try multiple matching strategies
+    let product = null;
+    
+    // 1. Try exact barcode match
+    product = products.find(p => p.barcode === qrData);
+    
+    // 2. Try product ID match
+    if (!product) {
+      product = products.find(p => p.id === qrData);
+    }
+    
+    // 3. Try partial name match (case insensitive)
+    if (!product) {
+      product = products.find(p => 
+        p.name.toLowerCase().includes(qrData.toLowerCase()) ||
+        qrData.toLowerCase().includes(p.name.toLowerCase())
+      );
+    }
+    
+    // 4. Try barcode partial match
+    if (!product && qrData.length > 5) {
+      product = products.find(p => 
+        p.barcode && (
+          p.barcode.includes(qrData) || 
+          qrData.includes(p.barcode)
+        )
+      );
+    }
     
     if (product) {
       addToCart(product);
       toast({
         title: "Product Added!",
-        description: `${product.name} added to cart`,
+        description: `${product.name} added to cart via QR scan`,
       });
     } else {
       toast({
         title: "Product Not Found",
-        description: `No product found for QR code: ${qrData}`,
+        description: `No product found for: ${qrData}. Try adding the product manually.`,
         variant: "destructive",
       });
     }
@@ -392,9 +420,10 @@ export default function Sales() {
                     className="w-full"
                     onClick={handleSale}
                     size="lg"
+                    disabled={isProcessing}
                   >
                     <Receipt className="h-4 w-4 mr-2" />
-                    Complete Sale
+                    {isProcessing ? "Processing Sale..." : "Complete Sale"}
                   </Button>
                 </>
               )}

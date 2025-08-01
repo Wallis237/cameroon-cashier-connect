@@ -18,8 +18,10 @@ export default function Login() {
     password: "", 
     phone: "" 
   });
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const navigate = useNavigate();
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, resetPassword, user } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -77,6 +79,30 @@ export default function Login() {
     setIsLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const { error } = await resetPassword(forgotPasswordEmail);
+    
+    if (error) {
+      toast({
+        title: "Password Reset Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Please check your email for password reset instructions.",
+      });
+      setShowForgotPassword(false);
+      setForgotPasswordEmail("");
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 p-4">
       <div className="w-full max-w-md">
@@ -121,14 +147,63 @@ export default function Login() {
                       onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
                       required
                     />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Signing in..." : "Sign In"}
-                  </Button>
+                   </div>
+                   <div className="text-center">
+                     <Button
+                       type="button"
+                       variant="link"
+                       onClick={() => setShowForgotPassword(true)}
+                       className="text-sm"
+                     >
+                       Forgot password?
+                     </Button>
+                   </div>
+                   <Button 
+                     type="submit" 
+                     className="w-full" 
+                     disabled={isLoading}
+                   >
+                     {isLoading ? "Signing in..." : "Sign In"}
+                   </Button>
+                   
+                   {showForgotPassword && (
+                     <Card className="mt-4 border-muted">
+                       <CardContent className="pt-4">
+                         <form onSubmit={handleForgotPassword} className="space-y-3">
+                           <div className="space-y-2">
+                             <Label htmlFor="forgotEmail">Email for password reset</Label>
+                             <Input
+                               id="forgotEmail"
+                               type="email"
+                               placeholder="Enter your email"
+                               value={forgotPasswordEmail}
+                               onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                               required
+                             />
+                           </div>
+                           <div className="flex gap-2">
+                             <Button 
+                               type="submit" 
+                               size="sm"
+                               disabled={isLoading}
+                               className="flex-1"
+                             >
+                               {isLoading ? "Sending..." : "Send Reset Email"}
+                             </Button>
+                             <Button 
+                               type="button" 
+                               variant="outline"
+                               size="sm"
+                               onClick={() => setShowForgotPassword(false)}
+                               className="flex-1"
+                             >
+                               Cancel
+                             </Button>
+                           </div>
+                         </form>
+                       </CardContent>
+                     </Card>
+                   )}
                 </form>
               </TabsContent>
               

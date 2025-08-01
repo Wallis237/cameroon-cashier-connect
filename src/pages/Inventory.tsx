@@ -20,96 +20,29 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 import { toast } from "@/hooks/use-toast";
-
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  currentStock: number;
-  minStock: number;
-  maxStock: number;
-  costPrice: number;
-  sellPrice: number;
-  totalValue: number;
-  lastRestocked: string;
-  supplier?: string;
-}
+import { useProducts } from "@/hooks/useProducts";
 
 export default function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [stockFilter, setStockFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [adjustmentType, setAdjustmentType] = useState<"increase" | "decrease">("increase");
   const [adjustmentQuantity, setAdjustmentQuantity] = useState(1);
   const [adjustmentReason, setAdjustmentReason] = useState("");
+  
+  const { products, updateProduct, loading } = useProducts();
 
-  // Mock inventory data
-  const [inventory, setInventory] = useState<InventoryItem[]>([
-    {
-      id: "1",
-      name: "Women's Handbag",
-      category: "Accessories",
-      currentStock: 12,
-      minStock: 5,
-      maxStock: 50,
-      costPrice: 25000,
-      sellPrice: 45000,
-      totalValue: 300000,
-      lastRestocked: "2024-01-15",
-      supplier: "Fashion Suppliers Ltd"
-    },
-    {
-      id: "2",
-      name: "Men's Sneakers",
-      category: "Footwear",
-      currentStock: 3,
-      minStock: 8,
-      maxStock: 30,
-      costPrice: 35000,
-      sellPrice: 65000,
-      totalValue: 105000,
-      lastRestocked: "2024-01-10",
-      supplier: "Shoe Distributors"
-    },
-    {
-      id: "3",
-      name: "Summer Dress",
-      category: "Clothing",
-      currentStock: 25,
-      minStock: 10,
-      maxStock: 60,
-      costPrice: 18000,
-      sellPrice: 35000,
-      totalValue: 450000,
-      lastRestocked: "2024-01-20",
-      supplier: "Textile Imports"
-    },
-    {
-      id: "4",
-      name: "Watch",
-      category: "Accessories",
-      currentStock: 1,
-      minStock: 3,
-      maxStock: 15,
-      costPrice: 75000,
-      sellPrice: 125000,
-      totalValue: 75000,
-      lastRestocked: "2024-01-05",
-      supplier: "Electronics Hub"
-    }
-  ]);
+  const categories = ["all", ...Array.from(new Set(products.map(item => item.category)))];
 
-  const categories = ["all", ...Array.from(new Set(inventory.map(item => item.category)))];
-
-  const getStockStatus = (item: InventoryItem) => {
-    if (item.currentStock === 0) return "outofstock";
-    if (item.currentStock <= item.minStock) return "low";
-    if (item.currentStock >= item.maxStock * 0.8) return "high";
+  const getStockStatus = (item: any) => {
+    if (item.quantity === 0) return "outofstock";
+    if (item.quantity <= item.low_stock_threshold) return "low";
+    if (item.quantity >= item.low_stock_threshold * 5) return "high";
     return "normal";
   };
 
-  const filteredInventory = inventory.filter(item => {
+  const filteredProducts = products.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
@@ -122,12 +55,12 @@ export default function Inventory() {
     return matchesSearch && matchesCategory && matchesStock;
   });
 
-  const handleStockAdjustment = () => {
-    if (!selectedItem) return;
+  const handleStockAdjustment = async () => {
+    if (!selectedProduct) return;
 
     const newStock = adjustmentType === "increase" 
-      ? selectedItem.currentStock + adjustmentQuantity
-      : selectedItem.currentStock - adjustmentQuantity;
+      ? selectedProduct.quantity + adjustmentQuantity
+      : selectedProduct.quantity - adjustmentQuantity;
 
     if (newStock < 0) {
       toast({
@@ -138,29 +71,41 @@ export default function Inventory() {
       return;
     }
 
-    setInventory(prev => prev.map(item => 
-      item.id === selectedItem.id 
-        ? { 
-            ...item, 
-            currentStock: newStock,
-            totalValue: newStock * item.costPrice
-          }
-        : item
-    ));
+    try {
+      await updateProduct(selectedProduct.id, { quantity: newStock });
+      
+      toast({
+        title: "Stock Adjusted",
+        description: `${selectedProduct.name} stock ${adjustmentType === "increase" ? "increased" : "decreased"} by ${adjustmentQuantity}`,
+      });
 
-    toast({
-      title: "Stock Adjusted",
-      description: `${selectedItem.name} stock ${adjustmentType === "increase" ? "increased" : "decreased"} by ${adjustmentQuantity}`,
-    });
-
-    setSelectedItem(null);
-    setAdjustmentQuantity(1);
-    setAdjustmentReason("");
+      setSelectedProduct(null);
+      setAdjustmentQuantity(1);
+      setAdjustmentReason("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to adjust stock. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const totalInventoryValue = inventory.reduce((sum, item) => sum + item.totalValue, 0);
-  const lowStockItems = inventory.filter(item => getStockStatus(item) === "low").length;
-  const outOfStockItems = inventory.filter(item => getStockStatus(item) === "outofstock").length;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Inventory Management</h1>
+          <p className="text-muted-foreground">Loading inventory data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalInventoryValue = products.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
+  const lowStockItems = products.filter(item => getStockStatus(item) === "low").length;
+  const outOfStockItems = products.filter(item => getStockStatus(item) === "outofstock").length;
+  const totalItems = products.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div className="space-y-6">
@@ -181,7 +126,7 @@ export default function Inventory() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatPrice(totalInventoryValue)}</div>
-            <p className="text-xs text-primary">+2.5% from last month</p>
+            <p className="text-xs text-primary">Current stock value</p>
           </CardContent>
         </Card>
 
@@ -191,10 +136,8 @@ export default function Inventory() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {inventory.reduce((sum, item) => sum + item.currentStock, 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">{inventory.length} product types</p>
+            <div className="text-2xl font-bold">{totalItems}</div>
+            <p className="text-xs text-muted-foreground">{products.length} product types</p>
           </CardContent>
         </Card>
 
@@ -266,150 +209,171 @@ export default function Inventory() {
         <CardHeader>
           <CardTitle>Inventory Items</CardTitle>
           <CardDescription>
-            Current stock levels and item details
+            Current stock levels and item details ({filteredProducts.length} items)
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredInventory.map((item) => {
-              const stockStatus = getStockStatus(item);
-              const stockPercentage = (item.currentStock / item.maxStock) * 100;
-              
-              return (
-                <div key={item.id} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{item.name}</h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {item.category}
-                        </Badge>
-                        {stockStatus === "low" && (
-                          <Badge variant="destructive" className="text-xs">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Low Stock
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No products found</h3>
+              <p className="text-muted-foreground">
+                {products.length === 0 
+                  ? "Start by adding products to your inventory"
+                  : "Try adjusting your search or filters"
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProducts.map((item) => {
+                const stockStatus = getStockStatus(item);
+                const maxStock = item.low_stock_threshold * 10; // Estimated max capacity
+                const stockPercentage = Math.min((item.quantity / maxStock) * 100, 100);
+                
+                return (
+                  <div key={item.id} className="p-4 border rounded-lg space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{item.name}</h3>
+                          <Badge variant="secondary" className="text-xs">
+                            {item.category}
                           </Badge>
+                          {stockStatus === "low" && (
+                            <Badge variant="destructive" className="text-xs">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Low Stock
+                            </Badge>
+                          )}
+                          {stockStatus === "outofstock" && (
+                            <Badge variant="destructive" className="text-xs">
+                              Out of Stock
+                            </Badge>
+                          )}
+                        </div>
+                        {item.barcode && (
+                          <p className="text-sm text-muted-foreground">
+                            Barcode: {item.barcode}
+                          </p>
                         )}
-                        {stockStatus === "outofstock" && (
-                          <Badge variant="destructive" className="text-xs">
-                            Out of Stock
-                          </Badge>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground">
+                            {item.description}
+                          </p>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Supplier: {item.supplier || "N/A"}
-                      </p>
-                    </div>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedItem(item)}
-                        >
-                          <History className="h-4 w-4 mr-2" />
-                          Adjust Stock
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Adjust Stock - {item.name}</DialogTitle>
-                          <DialogDescription>
-                            Increase or decrease stock levels for this item
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Current Stock: {item.currentStock}</Label>
-                            <div className="flex gap-2">
-                              <Button
-                                variant={adjustmentType === "increase" ? "default" : "outline"}
-                                onClick={() => setAdjustmentType("increase")}
-                                className="flex-1"
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Increase
-                              </Button>
-                              <Button
-                                variant={adjustmentType === "decrease" ? "default" : "outline"}
-                                onClick={() => setAdjustmentType("decrease")}
-                                className="flex-1"
-                              >
-                                <Minus className="h-4 w-4 mr-2" />
-                                Decrease
-                              </Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setSelectedProduct(item)}
+                          >
+                            <History className="h-4 w-4 mr-2" />
+                            Adjust Stock
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Adjust Stock - {item.name}</DialogTitle>
+                            <DialogDescription>
+                              Increase or decrease stock levels for this item
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Current Stock: {item.quantity}</Label>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant={adjustmentType === "increase" ? "default" : "outline"}
+                                  onClick={() => setAdjustmentType("increase")}
+                                  className="flex-1"
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Increase
+                                </Button>
+                                <Button
+                                  variant={adjustmentType === "decrease" ? "default" : "outline"}
+                                  onClick={() => setAdjustmentType("decrease")}
+                                  className="flex-1"
+                                >
+                                  <Minus className="h-4 w-4 mr-2" />
+                                  Decrease
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="quantity">Quantity</Label>
+                              <Input
+                                id="quantity"
+                                type="number"
+                                min="1"
+                                value={adjustmentQuantity}
+                                onChange={(e) => setAdjustmentQuantity(Number(e.target.value))}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="reason">Reason (Optional)</Label>
+                              <Textarea
+                                id="reason"
+                                placeholder="Enter reason for stock adjustment..."
+                                value={adjustmentReason}
+                                onChange={(e) => setAdjustmentReason(e.target.value)}
+                              />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="quantity">Quantity</Label>
-                            <Input
-                              id="quantity"
-                              type="number"
-                              min="1"
-                              value={adjustmentQuantity}
-                              onChange={(e) => setAdjustmentQuantity(Number(e.target.value))}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="reason">Reason (Optional)</Label>
-                            <Textarea
-                              id="reason"
-                              placeholder="Enter reason for stock adjustment..."
-                              value={adjustmentReason}
-                              onChange={(e) => setAdjustmentReason(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button onClick={handleStockAdjustment}>
-                            Apply Adjustment
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                          <DialogFooter>
+                            <Button onClick={handleStockAdjustment}>
+                              Apply Adjustment
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Current Stock</p>
-                      <p className="font-medium text-lg">{item.currentStock}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Current Stock</p>
+                        <p className="font-medium text-lg">{item.quantity}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Low Stock Alert</p>
+                        <p className="font-medium">{item.low_stock_threshold}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Cost Price</p>
+                        <p className="font-medium">{formatPrice(item.cost_price)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Selling Price</p>
+                        <p className="font-bold text-primary">{formatPrice(item.selling_price)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Min / Max</p>
-                      <p className="font-medium">{item.minStock} / {item.maxStock}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Cost Price</p>
-                      <p className="font-medium">{formatPrice(item.costPrice)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Total Value</p>
-                      <p className="font-bold text-primary">{formatPrice(item.totalValue)}</p>
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Stock Level</span>
-                      <span>{stockPercentage.toFixed(1)}% of capacity</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Stock Level</span>
+                        <span>{item.quantity} units</span>
+                      </div>
+                      <Progress 
+                        value={stockPercentage} 
+                        className={`h-2 ${
+                          stockStatus === "low" ? "text-destructive" :
+                          stockStatus === "outofstock" ? "text-destructive" :
+                          "text-primary"
+                        }`}
+                      />
                     </div>
-                    <Progress 
-                      value={stockPercentage} 
-                      className={`h-2 ${
-                        stockStatus === "low" ? "text-destructive" :
-                        stockStatus === "outofstock" ? "text-destructive" :
-                        "text-primary"
-                      }`}
-                    />
-                  </div>
 
-                  <div className="text-xs text-muted-foreground">
-                    Last restocked: {new Date(item.lastRestocked).toLocaleDateString()}
+                    <div className="text-xs text-muted-foreground">
+                      Last updated: {new Date(item.updated_at).toLocaleDateString()}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

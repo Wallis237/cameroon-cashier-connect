@@ -35,42 +35,61 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
     try {
       setIsScanning(true);
       
-      // Check if camera permission is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Camera not supported in this browser");
+      // Check for camera support
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera access not supported in this browser");
       }
+
+      // Request camera permission first
+      await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
 
       qrScannerRef.current = new QrScanner(
         videoRef.current,
         (result) => {
+          console.log('QR Code detected:', result.data);
           onScan(result.data);
           stopScanner();
           onClose();
-          toast({
-            title: "QR Code Scanned!",
-            description: `Scanned: ${result.data}`,
-          });
         },
         {
           highlightScanRegion: true,
           highlightCodeOutline: true,
-          preferredCamera: 'environment', // Use back camera on mobile
+          preferredCamera: 'environment',
           maxScansPerSecond: 5,
+          calculateScanRegion: (video) => {
+            const scanRegionSize = Math.min(video.videoWidth, video.videoHeight) * 0.7;
+            return {
+              x: (video.videoWidth - scanRegionSize) / 2,
+              y: (video.videoHeight - scanRegionSize) / 2,
+              width: scanRegionSize,
+              height: scanRegionSize,
+            };
+          },
         }
       );
 
       await qrScannerRef.current.start();
       setIsScanning(true);
+      
+      toast({
+        title: "Camera Ready",
+        description: "Point your camera at a QR code to scan",
+      });
+      
     } catch (error: any) {
       console.error("Error starting QR scanner:", error);
       let errorMessage = "Unable to access camera. Please check permissions.";
       
       if (error?.name === 'NotAllowedError') {
-        errorMessage = "Camera access denied. Please allow camera permissions and try again.";
+        errorMessage = "Camera access denied. Please allow camera permissions in your browser settings and refresh the page.";
       } else if (error?.name === 'NotFoundError') {
         errorMessage = "No camera found on this device.";
       } else if (error?.name === 'NotSupportedError') {
-        errorMessage = "Camera not supported in this browser.";
+        errorMessage = "Camera not supported in this browser. Try using Chrome or Safari.";
+      } else if (error?.name === 'NotReadableError') {
+        errorMessage = "Camera is being used by another application. Please close other camera apps and try again.";
       }
       
       toast({
