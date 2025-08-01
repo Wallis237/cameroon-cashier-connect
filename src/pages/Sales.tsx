@@ -92,10 +92,10 @@ export default function Sales() {
       prev.map(item => {
         if (item.id === id) {
           const product = products.find(p => p.id === id);
-          if (product && quantity > product.stock) {
+          if (product && quantity > product.quantity) {
             toast({
               title: "Stock Limit",
-              description: `Only ${product.stock} items available`,
+              description: `Only ${product.quantity} items available`,
               variant: "destructive",
             });
             return item;
@@ -150,14 +150,14 @@ export default function Sales() {
       // Record sale in database
       const { error: salesError } = await supabase
         .from('sales')
-        .insert([{
+        .insert({
           user_id: user?.id,
           customer_name: customerName || null,
-          items: cart,
+          items: cart as any,
           subtotal: subtotal,
           discount: discountAmount,
           total: total,
-        }]);
+        });
 
       if (salesError) throw salesError;
 
@@ -251,10 +251,10 @@ export default function Sales() {
                       
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-primary">
-                          {formatPrice(product.price)}
+                          {formatPrice(product.selling_price)}
                         </span>
-                        <span className={`text-xs ${product.stock < 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                          {product.stock} in stock
+                        <span className={`text-xs ${product.quantity < 5 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {product.quantity} in stock
                         </span>
                       </div>
 
@@ -272,7 +272,7 @@ export default function Sales() {
                             size="sm"
                             variant="outline"
                             onClick={() => updateQuantity(product.id, inCart + 1)}
-                            disabled={inCart >= product.stock}
+                            disabled={inCart >= product.quantity}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -282,9 +282,9 @@ export default function Sales() {
                           size="sm"
                           className="w-full"
                           onClick={() => addToCart(product)}
-                          disabled={product.stock === 0}
+                          disabled={product.quantity === 0}
                         >
-                          {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                          {product.quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                         </Button>
                       )}
                     </div>
