@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { Eye, EyeOff } from "lucide-react";
 import madoLogo from "@/assets/mado-boutique-logo.png";
 
 export default function Login() {
@@ -20,6 +21,8 @@ export default function Login() {
   });
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const navigate = useNavigate();
   const { signIn, signUp, resetPassword, user } = useAuth();
 
@@ -137,17 +140,27 @@ export default function Login() {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={loginForm.password}
-                      onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                      required
-                    />
-                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="password">Password</Label>
+                     <div className="relative">
+                       <Input
+                         id="password"
+                         type={showLoginPassword ? "text" : "password"}
+                         placeholder="Enter your password"
+                         value={loginForm.password}
+                         onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                         required
+                         className="pr-10"
+                       />
+                       <button
+                         type="button"
+                         onClick={() => setShowLoginPassword(!showLoginPassword)}
+                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                       >
+                         {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                       </button>
+                     </div>
+                    </div>
                    <div className="text-center">
                      <Button
                        type="button"
@@ -230,17 +243,27 @@ export default function Login() {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="registerPassword">Password</Label>
-                    <Input
-                      id="registerPassword"
-                      type="password"
-                      placeholder="Create a secure password"
-                      value={registerForm.password}
-                      onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
-                      required
-                    />
-                  </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="registerPassword">Password</Label>
+                     <div className="relative">
+                       <Input
+                         id="registerPassword"
+                         type={showRegisterPassword ? "text" : "password"}
+                         placeholder="Create a secure password"
+                         value={registerForm.password}
+                         onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
+                         required
+                         className="pr-10"
+                       />
+                       <button
+                         type="button"
+                         onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                       >
+                         {showRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                       </button>
+                     </div>
+                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
