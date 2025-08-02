@@ -175,19 +175,21 @@ export default function Sales() {
     setIsProcessing(true);
     
     try {
-      // Record sale in database
-      const { error: salesError } = await supabase
-        .from('sales')
-        .insert({
-          user_id: user?.id,
-          customer_name: customerName || null,
-          items: cart as any,
-          subtotal: subtotal,
-          discount: discountAmount,
-          total: total,
-        });
+      if (user) {
+        // Record sale in database if authenticated
+        const { error: salesError } = await supabase
+          .from('sales')
+          .insert({
+            user_id: user.id,
+            customer_name: customerName || null,
+            items: cart as any,
+            subtotal: subtotal,
+            discount: discountAmount,
+            total: total,
+          });
 
-      if (salesError) throw salesError;
+        if (salesError) throw salesError;
+      }
 
       // Update product quantities
       for (const item of cart) {
@@ -196,7 +198,7 @@ export default function Sales() {
 
       toast({
         title: "Sale Completed!",
-        description: `Total: ${formatPrice(total)} - Receipt saved successfully`,
+        description: `Total: ${formatPrice(total)}${!user ? ' (demo mode)' : ' - Receipt saved successfully'}`,
       });
 
       // Clear cart and reset form

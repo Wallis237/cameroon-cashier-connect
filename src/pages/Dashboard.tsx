@@ -13,9 +13,17 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
+import { useProducts } from "@/hooks/useProducts";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { products } = useProducts();
+
+  // Calculate real metrics from products
+  const totalProducts = products.length;
+  const totalInventoryValue = products.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
+  const lowStockItems = products.filter(item => item.quantity <= item.low_stock_threshold).length;
+  const totalItems = products.reduce((sum, item) => sum + item.quantity, 0);
 
   const stats = [
     {
@@ -27,22 +35,22 @@ export default function Dashboard() {
     },
     {
       title: "Total Products",
-      value: "847",
-      description: "In inventory",
+      value: totalProducts.toString(),
+      description: `${totalItems} items in stock`,
       icon: Package,
       trend: "neutral"
     },
     {
       title: "Low Stock Alerts",
-      value: "3",
+      value: lowStockItems.toString(),
       description: "Need attention",
       icon: AlertTriangle,
       trend: "down"
     },
     {
-      title: "Monthly Revenue",
-      value: formatPrice(3450000),
-      description: "+23% this month",
+      title: "Inventory Value",
+      value: formatPrice(totalInventoryValue),
+      description: "Current stock value",
       icon: TrendingUp,
       trend: "up"
     }
@@ -55,11 +63,14 @@ export default function Dashboard() {
     { id: 4, customer: "Paul Foka", items: 2, total: 32100, time: "08:50 AM" },
   ];
 
-  const lowStockItems = [
-    { name: "Women's Handbag", stock: 2, min: 10 },
-    { name: "Men's Sneakers", stock: 1, min: 5 },
-    { name: "Summer Dress", stock: 3, min: 8 },
-  ];
+  const lowStockProducts = products
+    .filter(item => item.quantity <= item.low_stock_threshold)
+    .slice(0, 3)
+    .map(item => ({
+      name: item.name,
+      stock: item.quantity,
+      min: item.low_stock_threshold
+    }));
 
   const quickActions = [
     {
@@ -197,23 +208,29 @@ export default function Dashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {lowStockItems.map((item, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-sm">{item.name}</p>
-                    <Badge variant="destructive" className="text-xs">
-                      {item.stock} left
-                    </Badge>
+           <div className="space-y-3">
+              {lowStockProducts.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  All products are well stocked!
+                </p>
+              ) : (
+                lowStockProducts.map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm">{item.name}</p>
+                      <Badge variant="destructive" className="text-xs">
+                        {item.stock} left
+                      </Badge>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-destructive h-2 rounded-full transition-all"
+                        style={{ width: `${Math.max(10, (item.stock / item.min) * 100)}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className="bg-destructive h-2 rounded-full transition-all"
-                      style={{ width: `${(item.stock / item.min) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <Button variant="outline" className="w-full mt-4" onClick={() => navigate("/inventory?filter=low")}>
               View All Low Stock
