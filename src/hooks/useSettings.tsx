@@ -34,8 +34,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSettings = async () => {
     if (!user) {
-      // Use default settings for demo mode
-      setSettings(defaultSettings);
+      // Load from localStorage for demo mode
+      const savedSettings = localStorage.getItem('app-settings');
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings);
+          setSettings({ ...defaultSettings, ...parsed });
+        } catch {
+          setSettings(defaultSettings);
+        }
+      } else {
+        setSettings(defaultSettings);
+      }
       setLoading(false);
       return;
     }
@@ -78,14 +88,35 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const updateSettings = async (newSettings: Partial<Settings>) => {
     try {
       const updatedSettings = { ...settings, ...newSettings };
+      
+      // Always update local state immediately for better UX
+      setSettings(updatedSettings);
+      
+      // Apply theme immediately
+      if (newSettings.theme) {
+        const root = document.documentElement;
+        if (newSettings.theme === 'dark') {
+          root.classList.add('dark');
+        } else if (newSettings.theme === 'light') {
+          root.classList.remove('dark');
+        } else {
+          // Auto mode - check system preference
+          const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+          if (mediaQuery.matches) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        }
+      }
 
       if (!user) {
-        // Update local state only for demo mode
-        setSettings(updatedSettings);
+        // Store in localStorage for demo mode
+        localStorage.setItem('app-settings', JSON.stringify(updatedSettings));
         
         toast({
           title: "Settings Updated",
-          description: "Your preferences have been saved (demo mode)",
+          description: "Your preferences have been saved",
         });
         return;
       }
@@ -96,8 +127,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', user.id);
 
       if (error) throw error;
-
-      setSettings(updatedSettings);
       
       toast({
         title: "Settings Updated",

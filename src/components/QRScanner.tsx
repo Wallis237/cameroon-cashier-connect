@@ -33,17 +33,12 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
     if (!videoRef.current) return;
 
     try {
-      setIsScanning(true);
+      setIsScanning(false);
       
       // Check for camera support
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera access not supported in this browser");
       }
-
-      // Request camera permission first
-      await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
 
       qrScannerRef.current = new QrScanner(
         videoRef.current,
@@ -58,15 +53,6 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
           highlightCodeOutline: true,
           preferredCamera: 'environment',
           maxScansPerSecond: 5,
-          calculateScanRegion: (video) => {
-            const scanRegionSize = Math.min(video.videoWidth, video.videoHeight) * 0.7;
-            return {
-              x: (video.videoWidth - scanRegionSize) / 2,
-              y: (video.videoHeight - scanRegionSize) / 2,
-              width: scanRegionSize,
-              height: scanRegionSize,
-            };
-          },
         }
       );
 

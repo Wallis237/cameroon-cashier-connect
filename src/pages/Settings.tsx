@@ -44,6 +44,21 @@ export default function Settings() {
     });
   };
 
+  const handleThemeChange = async (newTheme: string) => {
+    setTheme(newTheme);
+    await updateSettings({ theme: newTheme });
+  };
+
+  const handleCurrencyChange = async (newCurrency: string) => {
+    setCurrency(newCurrency);
+    await updateSettings({ currency: newCurrency });
+  };
+
+  const handleShopNameChange = async (newName: string) => {
+    setShopName(newName);
+    await updateSettings({ shop_name: newName });
+  };
+
   const handleExportData = () => {
     toast({
       title: "Data Export Started",
@@ -86,7 +101,7 @@ export default function Settings() {
               <Input
                 id="shopName"
                 value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
+                onChange={(e) => handleShopNameChange(e.target.value)}
                 placeholder="Enter your shop name"
               />
             </div>
@@ -135,7 +150,7 @@ export default function Settings() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="currency">Default Currency</Label>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={handleCurrencyChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -185,7 +200,7 @@ export default function Settings() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="theme">Theme</Label>
-              <Select value={theme} onValueChange={setTheme}>
+              <Select value={theme} onValueChange={handleThemeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
