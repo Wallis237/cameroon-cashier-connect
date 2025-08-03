@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettings } from "@/hooks/useSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,19 +20,27 @@ import {
 import { toast } from "@/hooks/use-toast";
 
 export default function Settings() {
-  const [shopName, setShopName] = useState("Mado Boutique");
-  const [currency, setCurrency] = useState("XAF");
+  const { settings, updateSettings, loading } = useSettings();
+  const [shopName, setShopName] = useState(settings.shop_name);
+  const [currency, setCurrency] = useState(settings.currency);
+  const [theme, setTheme] = useState(settings.theme);
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const [enableNotifications, setEnableNotifications] = useState(true);
   const [enableSounds, setEnableSounds] = useState(false);
   const [autoBackup, setAutoBackup] = useState(true);
-  const [theme, setTheme] = useState("light");
 
-  const handleSaveSettings = () => {
-    // Save settings logic here
-    toast({
-      title: "Settings Saved",
-      description: "Your boutique settings have been updated successfully",
+  // Update local state when settings change
+  useEffect(() => {
+    setShopName(settings.shop_name);
+    setCurrency(settings.currency);
+    setTheme(settings.theme);
+  }, [settings]);
+
+  const handleSaveSettings = async () => {
+    await updateSettings({
+      shop_name: shopName,
+      currency: currency,
+      theme: theme,
     });
   };
 
