@@ -21,6 +21,7 @@ import { QRScanner } from "@/components/QRScanner";
 import { useProducts } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface CartItem {
   id: string;
@@ -39,6 +40,7 @@ export default function Sales() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { products, updateStock } = useProducts();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -221,7 +223,7 @@ export default function Sales() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">New Sale</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('Sales')}</h1>
         <p className="text-muted-foreground">
           Select products and process customer purchases
         </p>

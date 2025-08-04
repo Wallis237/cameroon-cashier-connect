@@ -17,6 +17,7 @@ const translations: Translations = {
     'Reports': 'Reports',
     'Settings': 'Settings',
     'Profile': 'Profile',
+    'Add Product': 'Add Product',
     
     // Settings page
     'Configure your boutique POS system preferences': 'Configure your boutique POS system preferences',
@@ -60,6 +61,7 @@ const translations: Translations = {
     'Reports': 'Rapports',
     'Settings': 'Paramètres',
     'Profile': 'Profil',
+    'Add Product': 'Ajouter Produit',
     
     // Settings page
     'Configure your boutique POS system preferences': 'Configurez les préférences de votre système de caisse boutique',

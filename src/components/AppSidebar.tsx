@@ -13,6 +13,7 @@ import {
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 
 import {
   Sidebar,
@@ -30,22 +31,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Inventory", url: "/inventory", icon: Package },
-  { title: "New Sale", url: "/sales", icon: ShoppingCart },
-  { title: "Reports", url: "/reports", icon: BarChart3 },
+const getMainItems = (t: (key: string) => string) => [
+  { title: t("Dashboard"), url: "/dashboard", icon: LayoutDashboard },
+  { title: t("Inventory"), url: "/inventory", icon: Package },
+  { title: t("Sales"), url: "/sales", icon: ShoppingCart },
+  { title: t("Reports"), url: "/reports", icon: BarChart3 },
 ];
 
-const quickActions = [
-  { title: "Add Product", url: "/products", icon: Plus },
+const getQuickActions = (t: (key: string) => string) => [
+  { title: t("Add Product"), url: "/products", icon: Plus },
   { title: "View Stock", url: "/inventory", icon: Eye },
   { title: "Low Stock", url: "/inventory?filter=low", icon: AlertTriangle },
 ];
 
-const settingsItems = [
-  { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Profile", url: "/profile", icon: User },
+const getSettingsItems = (t: (key: string) => string) => [
+  { title: t("Settings"), url: "/settings", icon: Settings },
+  { title: t("Profile"), url: "/profile", icon: User },
 ];
 
 export function AppSidebar() {
@@ -54,6 +55,11 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
   const { signOut, user } = useAuth();
+  const { t } = useTranslation();
+  
+  const mainItems = getMainItems(t);
+  const quickActions = getQuickActions(t);
+  const settingsItems = getSettingsItems(t);
 
   const handleSignOut = async () => {
     await signOut();

@@ -43,6 +43,7 @@ import { toast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { QRScanner } from "@/components/QRScanner";
 import { QRProductScanner } from "@/components/QRProductScanner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,6 +54,7 @@ export default function Products() {
   const [showQRProductScanner, setShowQRProductScanner] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { products, loading, addProduct, updateProduct, deleteProduct } = useProducts();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -179,7 +181,7 @@ export default function Products() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Products</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('Products')}</h1>
           <p className="text-muted-foreground">
             Manage your product catalog and inventory
           </p>

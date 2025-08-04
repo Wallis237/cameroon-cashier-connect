@@ -33,22 +33,17 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
 
   const checkCameraPermission = async () => {
     try {
+      console.log('Checking camera permission...');
+      
       // Check if camera is available
       const hasCamera = await QrScanner.hasCamera();
+      console.log('Has camera:', hasCamera);
+      
       if (!hasCamera) {
         throw new Error("No camera found");
       }
 
-      // Request permission
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: { ideal: 'environment' } 
-        } 
-      });
-      
-      // Stop the test stream
-      stream.getTracks().forEach(track => track.stop());
-      
+      // Request permission directly without testing first
       setHasPermission(true);
       startScanner();
     } catch (error: any) {
@@ -73,7 +68,10 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
   };
 
   const startScanner = async () => {
-    if (!videoRef.current || !hasPermission) return;
+    if (!videoRef.current) {
+      console.log('Video ref not available');
+      return;
+    }
 
     try {
       console.log('Starting QR scanner...');
@@ -100,6 +98,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
         }
       );
 
+      console.log('About to start scanner...');
       await qrScannerRef.current.start();
       setIsScanning(true);
       
@@ -108,10 +107,20 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
     } catch (error: any) {
       console.error("Error starting QR scanner:", error);
       setIsScanning(false);
+      setHasPermission(false);
+      
+      let errorMessage = "Failed to start camera scanner.";
+      if (error?.name === 'NotAllowedError') {
+        errorMessage = "Camera permission denied. Please allow camera access.";
+      } else if (error?.name === 'NotFoundError') {
+        errorMessage = "No camera found on this device.";
+      } else if (error?.name === 'NotSupportedError') {
+        errorMessage = "Camera not supported in this browser.";
+      }
       
       toast({
         title: "Scanner Error",
-        description: "Failed to start camera scanner. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

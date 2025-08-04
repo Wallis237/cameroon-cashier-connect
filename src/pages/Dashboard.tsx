@@ -14,10 +14,12 @@ import {
 import { formatPrice } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
 import { useProducts } from "@/hooks/useProducts";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { products } = useProducts();
+  const { t } = useTranslation();
 
   // Calculate real metrics from products
   const totalProducts = products.length;
@@ -107,7 +109,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('Dashboard')}</h1>
         <p className="text-muted-foreground">
           Welcome back! Here's what's happening at your boutique today.
         </p>
