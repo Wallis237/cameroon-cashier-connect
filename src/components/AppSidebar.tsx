@@ -40,8 +40,8 @@ const getMainItems = (t: (key: string) => string) => [
 
 const getQuickActions = (t: (key: string) => string) => [
   { title: t("Add Product"), url: "/products", icon: Plus },
-  { title: "View Stock", url: "/inventory", icon: Eye },
-  { title: "Low Stock", url: "/inventory?filter=low", icon: AlertTriangle },
+  { title: t("View Stock"), url: "/inventory", icon: Eye },
+  { title: t("Low Stock"), url: "/inventory?filter=low", icon: AlertTriangle },
 ];
 
 const getSettingsItems = (t: (key: string) => string) => [
@@ -87,8 +87,8 @@ export function AppSidebar() {
               <Package className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-semibold">Mado Boutique</p>
-              <p className="text-xs text-muted-foreground">POS System</p>
+              <p className="text-sm font-semibold">{t("Mado Boutique")}</p>
+              <p className="text-xs text-muted-foreground">{t("POS System")}</p>
             </div>
           </div>
         )}
@@ -98,7 +98,7 @@ export function AppSidebar() {
         {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Main Menu
+            {t("Main Menu")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -122,7 +122,7 @@ export function AppSidebar() {
         {/* Quick Actions */}
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Quick Actions
+            {t("Quick Actions")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -153,7 +153,7 @@ export function AppSidebar() {
         {/* Settings */}
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
-            Account
+            {t("Account")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -189,7 +189,7 @@ export function AppSidebar() {
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              {t("Sign Out")}
             </Button>
           </div>
         ) : (

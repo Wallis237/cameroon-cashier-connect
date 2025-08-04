@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Camera, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface QRScannerProps {
   isOpen: boolean;
@@ -13,11 +14,14 @@ interface QRScannerProps {
   title?: string;
 }
 
-export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: QRScannerProps) {
+export function QRScanner({ isOpen, onClose, onScan, title }: QRScannerProps) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const qrScannerRef = useRef<QrScanner | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  
+  const scanTitle = title || t("Scan QR Code");
 
   useEffect(() => {
     if (isOpen && videoRef.current) {
@@ -35,6 +39,15 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
     try {
       console.log('Checking camera permission...');
       
+      // Request user media permission first
+      await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      });
+      
       // Check if camera is available
       const hasCamera = await QrScanner.hasCamera();
       console.log('Has camera:', hasCamera);
@@ -43,7 +56,6 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
         throw new Error("No camera found");
       }
 
-      // Request permission directly without testing first
       setHasPermission(true);
       startScanner();
     } catch (error: any) {
@@ -52,7 +64,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
       
       let errorMessage = "Camera access failed.";
       if (error?.name === 'NotAllowedError') {
-        errorMessage = "Camera permission denied. Please allow camera access and try again.";
+        errorMessage = t("Camera permission denied. Please allow camera access and try again.");
       } else if (error?.name === 'NotFoundError' || error?.message === 'No camera found') {
         errorMessage = "No camera found on this device.";
       } else if (error?.name === 'NotSupportedError') {
@@ -60,7 +72,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
       }
       
       toast({
-        title: "Camera Error",
+        title: t("Camera Error"),
         description: errorMessage,
         variant: "destructive",
       });
@@ -85,8 +97,8 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
           onClose();
           
           toast({
-            title: "QR Code Scanned",
-            description: `Successfully scanned: ${result.data.substring(0, 50)}${result.data.length > 50 ? '...' : ''}`,
+            title: t("QR Code Scanned"),
+            description: `${t("Successfully scanned")}: ${result.data.substring(0, 50)}${result.data.length > 50 ? '...' : ''}`,
           });
         },
         {
@@ -111,7 +123,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
       
       let errorMessage = "Failed to start camera scanner.";
       if (error?.name === 'NotAllowedError') {
-        errorMessage = "Camera permission denied. Please allow camera access.";
+        errorMessage = t("Camera permission denied. Please allow camera access.");
       } else if (error?.name === 'NotFoundError') {
         errorMessage = "No camera found on this device.";
       } else if (error?.name === 'NotSupportedError') {
@@ -119,7 +131,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
       }
       
       toast({
-        title: "Scanner Error",
+        title: t("Scanner Error"),
         description: errorMessage,
         variant: "destructive",
       });
@@ -152,7 +164,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5" />
-            {title}
+            {scanTitle}
           </DialogTitle>
         </DialogHeader>
         
@@ -161,13 +173,13 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
             {hasPermission === false ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                 <Camera className="h-12 w-12 mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">Camera Access Required</h3>
+                <h3 className="text-lg font-semibold mb-2">{t("Camera Access Required")}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Please allow camera access to scan QR codes
+                  {t("Please allow camera access to scan QR codes")}
                 </p>
                 <Button onClick={retryCamera} variant="outline">
                   <Camera className="h-4 w-4 mr-2" />
-                  Allow Camera
+                  {t("Allow Camera")}
                 </Button>
               </div>
             ) : (
@@ -184,7 +196,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                     <div className="text-center text-white">
                       <Camera className="h-12 w-12 mx-auto mb-2 animate-pulse" />
-                      <p className="text-sm">Initializing camera...</p>
+                      <p className="text-sm">{t("Initializing camera...")}</p>
                     </div>
                   </div>
                 )}
@@ -195,7 +207,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
           {isScanning && (
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                Point your camera at a QR code to scan
+                {t("Point your camera at a QR code to scan")}
               </p>
             </div>
           )}
@@ -206,7 +218,7 @@ export function QRScanner({ isOpen, onClose, onScan, title = "Scan QR Code" }: Q
             className="w-full"
           >
             <X className="h-4 w-4 mr-2" />
-            Cancel
+            {t("Cancel")}
           </Button>
         </div>
       </DialogContent>

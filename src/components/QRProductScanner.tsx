@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Scan, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface QRProductScannerProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface QRProductScannerProps {
 }
 
 export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
+  const { t } = useTranslation();
   const [showScanner, setShowScanner] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addProduct } = useProducts();
@@ -71,7 +73,7 @@ export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
       setFormData(prev => ({ ...prev, barcode: qrData }));
       toast({
         title: "Barcode Scanned",
-        description: `Barcode: ${qrData}`,
+        description: `${t("Barcode")}: ${qrData}`,
       });
     }
   };
@@ -115,19 +117,19 @@ export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Product via QR Scan</DialogTitle>
+            <DialogTitle>{t("Add Product via QR Scan")}</DialogTitle>
           </DialogHeader>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="barcode">Barcode</Label>
+                <Label htmlFor="barcode">{t("Barcode")}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="barcode"
                     value={formData.barcode}
                     onChange={(e) => setFormData(prev => ({ ...prev, barcode: e.target.value }))}
-                    placeholder="Scan QR code first"
+                    placeholder={t("Scan QR Code to add product")}
                     readOnly
                   />
                   <Button
@@ -141,58 +143,60 @@ export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
               </div>
 
               <div>
-                <Label htmlFor="name">Product Name *</Label>
+                <Label htmlFor="name">{t("Product Name")} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={t("Enter product name")}
                   required
                 />
               </div>
               
               <div>
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category">{t("Category")} *</Label>
                 <Select 
                   value={formData.category} 
                   onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={t("Select category")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Clothing">Clothing</SelectItem>
-                    <SelectItem value="Accessories">Accessories</SelectItem>
-                    <SelectItem value="Footwear">Footwear</SelectItem>
-                    <SelectItem value="Electronics">Electronics</SelectItem>
-                    <SelectItem value="Home & Garden">Home & Garden</SelectItem>
-                    <SelectItem value="Beauty">Beauty</SelectItem>
-                    <SelectItem value="Sports">Sports</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Clothing">{t("Clothing")}</SelectItem>
+                    <SelectItem value="Accessories">{t("Accessories")}</SelectItem>
+                    <SelectItem value="Shoes">{t("Shoes")}</SelectItem>
+                    <SelectItem value="Bags">{t("Bags")}</SelectItem>
+                    <SelectItem value="Electronics">{t("Electronics")}</SelectItem>
+                    <SelectItem value="Home">{t("Home")}</SelectItem>
+                    <SelectItem value="Other">{t("Other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="cost_price">Cost Price *</Label>
+                  <Label htmlFor="cost_price">{t("Purchase Price")} *</Label>
                   <Input
                     id="cost_price"
                     type="number"
                     step="0.01"
                     value={formData.cost_price}
                     onChange={(e) => setFormData(prev => ({ ...prev, cost_price: e.target.value }))}
+                    placeholder={t("Enter purchase price")}
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="selling_price">Selling Price *</Label>
+                  <Label htmlFor="selling_price">{t("Selling Price")} *</Label>
                   <Input
                     id="selling_price"
                     type="number"
                     step="0.01"
                     value={formData.selling_price}
                     onChange={(e) => setFormData(prev => ({ ...prev, selling_price: e.target.value }))}
+                    placeholder={t("Enter selling price")}
                     required
                   />
                 </div>
@@ -200,18 +204,19 @@ export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Label htmlFor="quantity">{t("Quantity")} *</Label>
                   <Input
                     id="quantity"
                     type="number"
                     value={formData.quantity}
                     onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                    placeholder={t("Enter quantity")}
                     required
                   />
                 </div>
                 
                 <div>
-                  <Label htmlFor="low_stock_threshold">Low Stock Alert</Label>
+                  <Label htmlFor="low_stock_threshold">{t("Low Stock Alert Threshold")}</Label>
                   <Input
                     id="low_stock_threshold"
                     type="number"
@@ -243,16 +248,16 @@ export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
                 }}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t("Cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting || !formData.barcode}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Adding...
+                    {t("Adding product...")}
                   </>
                 ) : (
-                  "Add Product"
+                  t("Add Product")
                 )}
               </Button>
             </DialogFooter>
@@ -264,7 +269,7 @@ export function QRProductScanner({ isOpen, onClose }: QRProductScannerProps) {
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}
         onScan={handleQRScan}
-        title="Scan Product QR Code"
+        title={t("Scan Product QR Code")}
       />
     </>
   );
