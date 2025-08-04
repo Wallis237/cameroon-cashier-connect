@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSettings } from "@/hooks/useSettings";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { settings, updateSettings, loading } = useSettings();
+  const { language, setLanguage, t } = useTranslation();
   const [shopName, setShopName] = useState(settings.shop_name);
   const [currency, setCurrency] = useState(settings.currency);
   const [theme, setTheme] = useState(settings.theme);
@@ -59,6 +61,14 @@ export default function Settings() {
     await updateSettings({ shop_name: newName });
   };
 
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    toast({
+      title: t("Settings Updated"),
+      description: t("Language has been changed"),
+    });
+  };
+
   const handleExportData = () => {
     toast({
       title: "Data Export Started",
@@ -77,9 +87,9 @@ export default function Settings() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('Settings')}</h1>
         <p className="text-muted-foreground">
-          Configure your boutique POS system preferences
+          {t('Configure your boutique POS system preferences')}
         </p>
       </div>
 
@@ -89,34 +99,34 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Store className="h-5 w-5" />
-              Shop Information
+              {t('Shop Information')}
             </CardTitle>
             <CardDescription>
-              Basic information about your boutique
+              {t('Basic information about your boutique')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="shopName">Shop Name</Label>
+              <Label htmlFor="shopName">{t('Shop Name')}</Label>
               <Input
                 id="shopName"
                 value={shopName}
                 onChange={(e) => handleShopNameChange(e.target.value)}
-                placeholder="Enter your shop name"
+                placeholder={t('Enter your shop name')}
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">{t('Address')}</Label>
               <Input
                 id="address"
-                placeholder="Enter your shop address"
+                placeholder={t('Enter your shop address')}
                 defaultValue="Douala, Cameroon"
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t('Phone Number')}</Label>
               <Input
                 id="phone"
                 placeholder="+237 6XX XXX XXX"
@@ -125,7 +135,7 @@ export default function Settings() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('Email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -141,15 +151,15 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
-              Currency & Pricing
+              {t('Currency & Pricing')}
             </CardTitle>
             <CardDescription>
-              Configure currency and pricing preferences
+              {t('Configure currency and pricing preferences')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currency">Default Currency</Label>
+              <Label htmlFor="currency">{t('Default Currency')}</Label>
               <Select value={currency} onValueChange={handleCurrencyChange}>
                 <SelectTrigger>
                   <SelectValue />
@@ -164,7 +174,7 @@ export default function Settings() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="taxRate">Tax Rate (%)</Label>
+              <Label htmlFor="taxRate">{t('Tax Rate (%)')}</Label>
               <Input
                 id="taxRate"
                 type="number"
@@ -174,7 +184,7 @@ export default function Settings() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="lowStockThreshold">Low Stock Alert Threshold</Label>
+              <Label htmlFor="lowStockThreshold">{t('Low Stock Alert Threshold')}</Label>
               <Input
                 id="lowStockThreshold"
                 type="number"
@@ -191,42 +201,42 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Palette className="h-5 w-5" />
-              Appearance
+              {t('Appearance')}
             </CardTitle>
             <CardDescription>
-              Customize the look and feel of your POS
+              {t('Customize the look and feel of your POS')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="theme">Theme</Label>
+              <Label htmlFor="theme">{t('Theme')}</Label>
               <Select value={theme} onValueChange={handleThemeChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">Light Mode</SelectItem>
-                  <SelectItem value="dark">Dark Mode</SelectItem>
-                  <SelectItem value="auto">System Default</SelectItem>
+                  <SelectItem value="light">{t('Light Mode')}</SelectItem>
+                  <SelectItem value="dark">{t('Dark Mode')}</SelectItem>
+                  <SelectItem value="auto">{t('System Default')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Select defaultValue="en">
+              <Label htmlFor="language">{t('Language')}</Label>
+              <Select value={language} onValueChange={handleLanguageChange}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="en">{t('English')}</SelectItem>
                   <SelectItem value="fr">Français</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="dateFormat">Date Format</Label>
+              <Label htmlFor="dateFormat">{t('Date Format')}</Label>
               <Select defaultValue="dd/mm/yyyy">
                 <SelectTrigger>
                   <SelectValue />
@@ -388,7 +398,7 @@ export default function Settings() {
       {/* Save Button */}
       <div className="flex justify-end">
         <Button onClick={handleSaveSettings} size="lg">
-          Save All Settings
+          {t('Save All Settings')}
         </Button>
       </div>
     </div>
