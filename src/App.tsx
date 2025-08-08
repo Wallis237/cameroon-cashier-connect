@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import "./App.css"; // Ensure this is present for the CSS
 
 const queryClient = new QueryClient();
 
@@ -27,6 +27,16 @@ const App = () => (
       <SettingsProvider>
         <TranslationProvider>
           <TooltipProvider>
+            {/* Video background */}
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="background-video"
+              src="/0.mp4"
+              type="video/mp4"
+            />
             <Toaster />
             <Sonner />
             <BrowserRouter>
