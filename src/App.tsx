@@ -28,15 +28,7 @@ const App = () => (
         <TranslationProvider>
           <TooltipProvider>
             {/* Video background */}
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="background-video"
-              src="/0.mp4"
-              type="video/mp4"
-            />
+            
             <Toaster />
             <Sonner />
             <BrowserRouter>
